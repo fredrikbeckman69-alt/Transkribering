@@ -1,7 +1,7 @@
-// Vi använder en CORS-proxy för att kunna anropa API:et direkt från webbläsaren utan backend
-const PROXY_URL = "https://corsproxy.io/?";
-const TARGET_URL = "https://router.huggingface.co/hf-inference/models/KBLab/whisper-large-v3-swedish";
-const API_URL = PROXY_URL + encodeURIComponent(TARGET_URL);
+// Vi använder vår lokala python-server som proxy för att undvika CORS-problem
+const API_URL = "/api/transcribe";
+// const PROXY_URL = "https://corsproxy.io/?";
+// const TARGET_URL = "https://router.huggingface.co/hf-inference/models/KBLab/whisper-large-v3-swedish";
 
 // DOM Elements
 const tokenInput = document.getElementById('api-token');
