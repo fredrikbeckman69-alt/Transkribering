@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="sv">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Svensk Transkribering</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Svensk Transkribering</h1>
+            <div class="subtitle">AI-driven tal-till-text med KBLab Whisper</div>
+        </header>
+
+        <div class="settings-bar">
+            <div id="connection-status" class="connection-status">
+                <span class="status-dot"></span> Inte ansluten
+            </div>
+            <button id="settings-btn" class="icon-btn" title="Inställningar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="settings-panel" class="settings-panel hidden">
+            <div class="input-group">
+                <label for="api-token">Hugging Face API Token</label>
+                <div class="token-input-wrapper">
+                    <input type="password" id="api-token" placeholder="hf_..." autocomplete="off">
+                </div>
+                <p class="help-text">Token sparas lokalt i din webbläsare för framtida sessioner.</p>
+            </div>
+        </div>
+
+        <main>
+
+            <div class="input-group">
+                <label>Ljudfil</label>
+                <div id="drop-area" class="file-drop-area">
+                    <span id="file-msg" class="file-msg">Klicka eller dra ljudfil hit för att ladda upp</span>
+                    <input type="file" id="audio-file" class="file-input" accept="audio/*">
+                    <div id="selected-file-msg" class="selected-file"></div>
+                </div>
+            </div>
+
+            <button id="transcribe-btn" class="btn-primary" disabled>Start Transcription</button>
+            <div id="status-msg" class="status-msg"></div>
+
+            <div id="output-container" class="output-container">
+                <label>Transkribering</label>
+                <div id="transcription-text" class="transcription-box"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
