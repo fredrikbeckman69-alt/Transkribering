@@ -1,4 +1,5 @@
 // Vi använder vår lokala python-server som proxy för att undvika CORS-problem
+// Detta är den ENDA lösningen som fungerar pålitligt eftersom corsproxy.io blockerar requests
 const API_URL = "/api/transcribe";
 // const PROXY_URL = "https://corsproxy.io/?";
 // const TARGET_URL = "https://router.huggingface.co/hf-inference/models/KBLab/whisper-large-v3-swedish";
