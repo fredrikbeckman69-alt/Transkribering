@@ -44,7 +44,20 @@ class ProxyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(e.code)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(e.read())
+            
+            error_body = e.read()
+            # Try to parse as JSON to see if we can pass it through
+            try:
+                # If it parses, it's safe to send as is
+                json.loads(error_body)
+                self.wfile.write(error_body)
+            except:
+                # If not JSON (likely HTML), wrap it so client doesn't crash on .json()
+                safe_response = {
+                    "error": f"Upstream API Error {e.code}",
+                    "details": error_body.decode('utf-8', errors='replace')[:500] # Truncate to avoid huge HTML
+                }
+                self.wfile.write(json.dumps(safe_response).encode())
         except Exception as e:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
