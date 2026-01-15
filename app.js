@@ -32,10 +32,14 @@ function init() {
     if (savedToken) {
         tokenInput.value = savedToken;
         updateConnectionStatus(true);
+    } else if (typeof CONFIG !== 'undefined' && CONFIG.HF_API_TOKEN) {
+        // Use token from config.js if available (local development)
+        tokenInput.value = CONFIG.HF_API_TOKEN;
+        localStorage.setItem('hf_token', CONFIG.HF_API_TOKEN);
+        updateConnectionStatus(true);
     } else {
         updateConnectionStatus(false);
-        // We leave the panel hidden by default so it looks cleaner
-        // Users can open settings if they fail without token
+        // Users can open settings to add their token
     }
 
     setupEventListeners();

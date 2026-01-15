@@ -1,0 +1,11 @@
+# Git ignore file
+config.js
+.env
+*.m4a
+*.mp3
+*.wav
+debug_api.py
+test_endpoints.py
+verify_proxy.py
+__pycache__/
+*.pyc
