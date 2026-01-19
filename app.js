@@ -38,6 +38,9 @@ function setupEventListeners() {
     // Handle file input change
     fileInput.addEventListener('change', handleFiles, false);
 
+    // Handle click on drop area to trigger file input
+    fileDropArea.addEventListener('click', () => fileInput.click());
+
     // Transcribe button
     transcribeBtn.addEventListener('click', startTranscription);
 }

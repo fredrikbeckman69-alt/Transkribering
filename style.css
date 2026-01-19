@@ -267,14 +267,7 @@ input[type="password"]::placeholder {
 }
 
 .file-input {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 100%;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 10;
+  display: none;
 }
 
 .selected-file {
