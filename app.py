@@ -1,18 +1,24 @@
 import gradio as gr
 import requests
 import os
+import imageio_ffmpeg
+# Add ffmpeg to path
+os.environ["PATH"] += os.pathsep + os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe())
 
-import torch
-from transformers import pipeline
+# import torch
+# from transformers import pipeline
+
+# check system endpoint
+# ...
 
 # Initialize model (lazy loading or global loading)
 # For Spaces, global loading at startup is usually better to avoid delay on first request
 # But requires more startup time.
-print("Loading model...", flush=True)
-MODEL_NAME = "KBLab/kb-whisper-large"
-device = "cuda" if torch.cuda.is_available() else "cpu"
-pipe = pipeline("automatic-speech-recognition", model=MODEL_NAME, device=device)
-print(f"Model loaded on {device}", flush=True)
+# print("Loading model...", flush=True)
+# MODEL_NAME = "KBLab/kb-whisper-large"
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+# pipe = pipeline("automatic-speech-recognition", model=MODEL_NAME, device=device)
+# print(f"Model loaded on {device}", flush=True)
 
 def transcribe_audio(audio_file):
     """
@@ -21,18 +27,19 @@ def transcribe_audio(audio_file):
     if audio_file is None:
         return "❌ Vänligen ladda upp en ljudfil först."
     
-    try:
-        # Pipeline handles file reading and preprocessing
-        # Enable chunking for long audio files (>30s)
-        result = pipe(audio_file, chunk_length_s=30, return_timestamps=True)
+    # try:
+    #     # Pipeline handles file reading and preprocessing
+    #     # Enable chunking for long audio files (>30s)
+    #     result = pipe(audio_file, chunk_length_s=30, return_timestamps=True)
         
-        if "text" in result:
-            return f"✅ Transkribering:\n\n{result['text']}"
-        else:
-            return f"⚠️ Oväntat svar: {result}"
+    #     if "text" in result:
+    #         return f"✅ Transkribering:\n\n{result['text']}"
+    #     else:
+    #         return f"⚠️ Oväntat svar: {result}"
             
-    except Exception as e:
-        return f"❌ Ett fel uppstod: {str(e)}"
+    # except Exception as e:
+    #     return f"❌ Ett fel uppstod: {str(e)}"
+    return "✅ Backend is working (Mock Response)"
 
 # Custom CSS with Apple Siri gradient and glassmorphism
 custom_css = """
@@ -190,8 +197,25 @@ with gr.Blocks(title="Svensk Transkribering", theme=gr.themes.Soft(), css=custom
     transcribe_btn.click(
         fn=transcribe_audio,
         inputs=[audio_input],
-        outputs=output_text
+        outputs=output_text,
+        api_name="/transcribe_v2"
     )
+
+    with gr.Tab("System Check (Debug)"):
+        sys_btn = gr.Button("Check FFmpeg")
+        sys_out = gr.Textbox(label="System Info")
+        
+        def check_system():
+            import subprocess
+            try:
+                # Check ffmpeg
+                cmd = "ffmpeg -version"
+                output = subprocess.check_output(cmd.split(), stderr=subprocess.STDOUT).decode()
+                return f"✅ FFmpeg found:\n{output[:200]}..."
+            except Exception as e:
+                return f"❌ FFmpeg error: {str(e)}\n\nPATH: {os.environ.get('PATH')}"
+        
+        sys_btn.click(check_system, outputs=sys_out, api_name="/sys_info")
 
 # Launch the app
 if __name__ == "__main__":
