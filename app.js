@@ -103,8 +103,8 @@ async function startTranscription() {
         // Run prediction
         // The API returns an object with 'data' array. Logic depends on app.py return type.
         // Gradio Interface usually returns data[0] as the output.
-        // Endpoint found via client.view_api() is /transcribe_v2
-        const result = await client.predict("/transcribe_v2", [
+        // Endpoint found via client.view_api() is //transcribe_v2 (double slash required due to backend config)
+        const result = await client.predict("//transcribe_v2", [
             currentFile,
         ]);
 
