@@ -7,18 +7,18 @@ En webbaserad applikation för att transkribera svenskt tal till text med hjälp
 *   **Ingen installation krävs:** Körs direkt i webbläsaren.
 *   **AI-driven:** Använder KBLab:s kraftfulla Whisper-modell för svenska.
 *   **Filuppladdning:** Dra och släpp ljudfiler direkt i fönstret.
-*   **Flexibel anslutning:** Kan köras anonymt (gratis/kösystem) eller med din egen Hugging Face API-token för snabbare/säkrare åtkomst.
+*   **Kräver API Token:** Du måste ha en Hugging Face API-token (gratis) konfigurerad eftersom modellen kräver autentisering.
 *   **Modern Design:** Premium dark-mode gränssnitt.
 
 ## Hur man använder appen
 
 1.  Gå till mappen `Svensk transkribering`.
-2.  **Kör filen `start_app.bat`** (dubbelklicka).
-    *   Detta startar en lokal webbserver vilket krävs för att API anropen ska fungera (löser "Failed to fetch").
-3.  Webbläsaren öppnas automatiskt.
-4.  **Ladda upp fil:** Klicka på rutan eller dra in en ljudfil (.mp3, .wav, etc.).
-5.  **Transkribera:** Klicka på knappen.
-6.  **(Valfritt) API Token:** För bättre prestanda, klicka på inställningsikonen (kugghjulet) och ange din Hugging Face token.
+2.  **Konfigurera Token:** Se till att miljövariabeln `HF_TOKEN` är satt, eller redigera `start_app.bat` (avancerat).
+3.  **Kör filen `start_app.bat`** (dubbelklicka).
+    *   Detta startar en lokal webbserver.
+4.  Webbläsaren öppnas automatiskt.
+5.  **Ladda upp fil:** Klicka på rutan eller dra in en ljudfil (.mp3, .wav, etc.).
+6.  **Transkribera:** Klicka på knappen.
 
 ## Teknisk Info
 

@@ -24,29 +24,12 @@
         </header>
 
         <div class="settings-bar">
-            <div id="connection-status" class="connection-status">
-                <span class="status-dot"></span> Inte ansluten
+            <div id="connection-status" class="connection-status connected">
+                <span class="status-dot"></span> Redo att transkribera
             </div>
-            <button id="settings-btn" class="icon-btn" title="Inställningar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                    </path>
-                </svg>
-            </button>
         </div>
 
-        <div id="settings-panel" class="settings-panel hidden">
-            <div class="input-group">
-                <label for="api-token">Hugging Face API Token</label>
-                <div class="token-input-wrapper">
-                    <input type="password" id="api-token" placeholder="hf_..." autocomplete="off">
-                </div>
-                <p class="help-text">Token sparas lokalt i din webbläsare för framtida sessioner.</p>
-            </div>
-        </div>
+
 
         <main>
 
@@ -69,8 +52,8 @@
         </main>
     </div>
 
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+
+    <script type="module" src="app.js"></script>
 </body>
 
 </html>

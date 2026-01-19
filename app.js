@@ -1,14 +1,7 @@
-// Vi använder vår lokala python-server som proxy för att undvika CORS-problem
-// Detta är den ENDA lösningen som fungerar pålitligt eftersom corsproxy.io blockerar requests
-const API_URL = "/api/transcribe";
-// const PROXY_URL = "https://corsproxy.io/?";
-// const TARGET_URL = "https://router.huggingface.co/hf-inference/models/KBLab/whisper-large-v3-swedish";
+// Premium Siri-like Transcription App
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@0.1.4/dist/index.min.js";
 
 // DOM Elements
-const tokenInput = document.getElementById('api-token');
-const settingsBtn = document.getElementById('settings-btn');
-const settingsPanel = document.getElementById('settings-panel');
-const connectionStatus = document.getElementById('connection-status');
 const fileInput = document.getElementById('audio-file');
 const fileDropArea = document.getElementById('drop-area');
 const selectedFileMsg = document.getElementById('selected-file-msg');
@@ -22,59 +15,10 @@ let currentFile = null;
 
 // Initialize
 function init() {
-    // Check for file protocol
-    if (window.location.protocol === 'file:') {
-        showStatus('⚠️ Varning: Du kör appen lokalt direkt från fil (file://). Transkribering kommer troligen blockeras av webbläsaren. Använd start_app.bat för att testa lokalt, eller ladda upp filerna till en webbserver.', 'error');
-    }
-
-    // Load token from local storage if valid
-    const savedToken = localStorage.getItem('hf_token');
-    if (savedToken) {
-        tokenInput.value = savedToken;
-        updateConnectionStatus(true);
-    } else if (typeof CONFIG !== 'undefined' && CONFIG.HF_API_TOKEN) {
-        // Use token from config.js if available (local development)
-        tokenInput.value = CONFIG.HF_API_TOKEN;
-        localStorage.setItem('hf_token', CONFIG.HF_API_TOKEN);
-        updateConnectionStatus(true);
-    } else {
-        updateConnectionStatus(false);
-        // Users can open settings to add their token
-    }
-
     setupEventListeners();
 }
 
-function updateConnectionStatus(isConnected) {
-    if (isConnected) {
-        connectionStatus.innerHTML = '<span class="status-dot"></span> Kopplad till KB Whisper';
-        connectionStatus.classList.add('connected');
-    } else {
-        connectionStatus.innerHTML = '<span class="status-dot"></span> Ej ansluten (Körs anonymt)';
-        connectionStatus.classList.remove('connected');
-    }
-}
-
 function setupEventListeners() {
-    // Settings toggle
-    settingsBtn.addEventListener('click', () => {
-        settingsPanel.classList.toggle('hidden');
-    });
-
-    // Token input updates status
-    tokenInput.addEventListener('input', () => {
-        const hasToken = tokenInput.value.trim().length > 0;
-        updateConnectionStatus(hasToken);
-        // Button is always enabled now if file exists
-        transcribeBtn.disabled = !currentFile;
-
-        if (hasToken) {
-            localStorage.setItem('hf_token', tokenInput.value.trim());
-        } else {
-            localStorage.removeItem('hf_token');
-        }
-    });
-
     // Drag and drop effects
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         fileDropArea.addEventListener(eventName, preventDefaults, false);
@@ -129,106 +73,70 @@ function handleFileSelect(files) {
 }
 
 function updateFileUI(filename) {
-    selectedFileMsg.textContent = `Selected: ${filename}`;
+    selectedFileMsg.textContent = `Vald fil: ${filename}`;
     selectedFileMsg.style.display = 'block';
     fileMsg.style.display = 'none';
-    transcribeBtn.disabled = !currentFile;
+    transcribeBtn.disabled = false;
 }
 
-tokenInput.addEventListener('input', () => {
-    const hasToken = tokenInput.value.trim().length > 0;
-    updateConnectionStatus(hasToken);
-
-    // Button depends only on file, not token
-    transcribeBtn.disabled = !currentFile;
-
-    if (hasToken) {
-        localStorage.setItem('hf_token', tokenInput.value.trim());
-    } else {
-        localStorage.removeItem('hf_token');
-    }
-});
-
 async function startTranscription() {
-    const token = tokenInput.value.trim();
-
-    // Token is optional for some models/tiers, but recommended
-    // if (!token) {
-    //    showStatus('Please enter a valid API Token', 'error');
-    //    return;
-    // }
-
     if (!currentFile) {
-        showStatus('Please select a file', 'error');
+        showStatus('Vänligen välj en ljudfil', 'error');
         return;
-    }
-
-    // Save token if provided
-    if (token) {
-        localStorage.setItem('hf_token', token);
     }
 
     // Update UI state
     setLoading(true);
     outputContainer.classList.remove('visible');
     transcriptionText.textContent = '';
-    showStatus(token ? 'Transkriberar...' : 'Transkriberar (utan token)...');
+    showStatus('Ansluter till Hugging Face...');
 
     try {
-        const result = await query(currentFile, token);
+        // Connect to the Hugging Face Space
+        const client = await Client.connect("zpo685d/svensk-transkribering");
 
-        if (result.error) {
-            throw new Error(result.error);
+        showStatus('Transkriberar... (Detta kan ta några minuter för långa filer)');
+
+        // Run prediction
+        // The API returns an object with 'data' array. Logic depends on app.py return type.
+        // Gradio Interface usually returns data[0] as the output.
+        const result = await client.predict("/predict", {
+            audio_file: currentFile,
+        });
+
+        // Result format from Gradio client
+        const transcription = result.data[0];
+
+        if (transcription) {
+            // Remove the "✅ Transkribering:" prefix if it exists in the output to keep it clean
+            const cleanText = transcription.replace('✅ Transkribering:\n\n', '');
+            showResult(cleanText);
+            showStatus('Transkribering klar!');
+        } else {
+            throw new Error("Ingen text returnerades");
         }
-
-        const text = result.text;
-        showResult(text);
 
     } catch (error) {
         console.error('Transcription error:', error);
-        let msg = `Fel: ${error.message || 'Misslyckades'}`;
-        if (!token && error.message.includes('401')) {
-            msg += ' (Prova att lägga in en API Token i inställningarna)';
-        }
-        showStatus(msg, 'error');
+        showStatus(`Fel: ${error.message}`, 'error');
     } finally {
         setLoading(false);
     }
 }
 
-async function query(file, token) {
-    const headers = {
-        "Content-Type": "application/octet-stream",
-    };
-    if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(API_URL, {
-        headers: headers,
-        method: "POST",
-        body: file,
-    });
-
-    const result = await response.json();
-    return result;
-}
-
 function setLoading(isLoading) {
     if (isLoading) {
         transcribeBtn.disabled = true;
-        transcribeBtn.innerHTML = '<span class="loading"></span> Transcribing...';
+        transcribeBtn.innerHTML = '<span class="loading"></span> Bearbetar...';
     } else {
-        transcribeBtn.disabled = false;
-        transcribeBtn.textContent = 'Start Transcription';
+        transcribeBtn.disabled = !currentFile;
+        transcribeBtn.textContent = 'Transkribera igen';
     }
 }
 
 function showResult(text) {
     transcriptionText.textContent = text;
     outputContainer.classList.add('visible');
-
-    // Auto scroll to results
     outputContainer.scrollIntoView({ behavior: 'smooth' });
 }
 
