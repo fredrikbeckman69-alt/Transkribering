@@ -1,5 +1,5 @@
 // Premium Siri-like Transcription App
-import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@0.1.4/dist/index.min.js";
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
 
 // DOM Elements
 const fileInput = document.getElementById('audio-file');
