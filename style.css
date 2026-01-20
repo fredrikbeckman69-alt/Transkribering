@@ -412,6 +412,18 @@ input[type="password"]::placeholder {
   box-shadow: none;
 }
 
+.btn-secondary {
+  padding: 8px 16px;
+  background: var(--background-secondary);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 980px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
 .output-container {
   margin-top: 40px;
   padding-top: 32px;

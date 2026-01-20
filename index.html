@@ -35,24 +35,27 @@
 
             <div class="input-group">
                 <label>Ljudfil</label>
-                <div id="drop-area" class="file-drop-area">
-                    <span id="file-msg" class="file-msg">Klicka eller dra ljudfil hit för att ladda upp</span>
+                <div id="drop-area" class="file-drop-area" onclick="document.getElementById('audio-file').click()">
+                    <span id="file-msg" class="file-msg">Klicka eller dra ljudfil hit</span>
+                    <br><br>
+                    <button type="button" class="btn-secondary" style="pointer-events: none;">Välj fil</button>
                     <input type="file" id="audio-file" class="file-input" accept="audio/*">
                     <div id="selected-file-msg" class="selected-file"></div>
                 </div>
             </div>
+    </div>
 
-            <button id="transcribe-btn" class="btn-primary" disabled>Start Transcription</button>
-            <div id="status-msg" class="status-msg"></div>
+    <button id="transcribe-btn" class="btn-primary" disabled>Start Transcription</button>
+    <div id="status-msg" class="status-msg"></div>
 
-            <div id="output-container" class="output-container">
-                <div id="speaker-controls" class="speaker-controls">
-                    <!-- Dynamic speaker inputs will appear here -->
-                </div>
-                <!-- <label>Transkribering</label> -->
-                <div id="transcript-container" class="transcript-container"></div>
-            </div>
-        </main>
+    <div id="output-container" class="output-container">
+        <div id="speaker-controls" class="speaker-controls">
+            <!-- Dynamic speaker inputs will appear here -->
+        </div>
+        <!-- <label>Transkribering</label> -->
+        <div id="transcript-container" class="transcript-container"></div>
+    </div>
+    </main>
     </div>
 
 
