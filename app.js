@@ -82,6 +82,95 @@ function updateFileUI(filename) {
     transcribeBtn.disabled = false;
 }
 
+// Helper: Format speakers into dynamic HTML blocks
+function renderTranscript() {
+    transcriptionBox.innerHTML = '';
+
+    transcriptData.segments.forEach((seg, index) => {
+        const block = document.createElement('div');
+        block.className = 'transcript-block';
+        block.dataset.speaker = seg.speaker;
+
+        const header = document.createElement('div');
+        header.className = 'transcript-header';
+
+        const speakerLabel = document.createElement('span');
+        speakerLabel.className = 'speaker-label';
+        // Check if there is a custom name stored for this speaker key, or use default
+        const customName = document.getElementById(`input-${seg.speaker}`)?.value || seg.speaker;
+        speakerLabel.textContent = customName;
+        speakerLabel.id = `label-${seg.speaker}-${index}`; // Unique ID helper
+
+        const timeLabel = document.createElement('span');
+        timeLabel.className = 'timestamp';
+        // seg.formatted_time should come from backend
+        timeLabel.textContent = seg.formatted_time || "";
+
+        header.appendChild(speakerLabel);
+        header.appendChild(timeLabel);
+
+        const textP = document.createElement('div');
+        textP.className = 'transcript-text';
+        textP.textContent = seg.text;
+
+        block.appendChild(header);
+        block.appendChild(textP);
+        transcriptionBox.appendChild(block);
+    });
+}
+
+function renderSpeakerControls() {
+    speakerControls.innerHTML = '';
+
+    transcriptData.unique_speakers.forEach(speaker => {
+        const group = document.createElement('div');
+        group.className = 'speaker-input-group';
+
+        const label = document.createElement('label');
+        label.textContent = speaker + ":";
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'speaker-name-input';
+        input.value = speaker; // Default value is the ID key
+        input.id = `input-${speaker}`;
+        input.placeholder = "Ange namn";
+
+        // Live update listener
+        input.addEventListener('input', (e) => {
+            const newName = e.target.value;
+            // Update all labels in the transcript with this speaker code
+            const blocks = document.querySelectorAll(`[data-speaker="${speaker}"] .speaker-label`);
+            blocks.forEach(lbl => lbl.textContent = newName);
+        });
+
+        group.appendChild(label);
+        group.appendChild(input);
+        speakerControls.appendChild(group);
+    });
+}
+
+function showResult(data) {
+    if (data.error) {
+        showStatus(`Fel: ${data.error}`, 'error');
+        return;
+    }
+
+    // Store data globally
+    // Data expected: { "segments": [...], "unique_speakers": [...] }
+    transcriptData = data;
+
+    // Render UI
+    renderSpeakerControls();
+    renderTranscript();
+
+    outputContainer.classList.add('visible');
+    outputContainer.style.display = 'block';
+
+    // Smooth scroll to result
+    outputContainer.scrollIntoView({ behavior: 'smooth' });
+}
+
 async function startTranscription() {
     if (!currentFile) {
         showStatus('Vänligen välj en ljudfil', 'error');
@@ -91,7 +180,8 @@ async function startTranscription() {
     // Update UI state
     setLoading(true);
     outputContainer.classList.remove('visible');
-    transcriptionText.textContent = '';
+    speakerControls.innerHTML = ''; // Clear prev
+    transcriptionBox.innerHTML = ''; // Clear prev
     showStatus('Ansluter till Hugging Face...');
 
     try {
@@ -108,17 +198,17 @@ async function startTranscription() {
             currentFile,
         ]);
 
-        // Result format from Gradio client
-        const transcription = result.data[0];
-
-        if (transcription) {
-            // Remove the "✅ Transkribering:" prefix if it exists in the output to keep it clean
-            const cleanText = transcription.replace('✅ Transkribering:\n\n', '');
-            showResult(cleanText);
-            showStatus('Transkribering klar!');
-        } else {
-            throw new Error("Ingen text returnerades");
+        const responseData = result.data[0];
+        // Check if response is JSON (obj) or error string
+        if (typeof responseData === 'string') {
+            // Fallback if backend returned string error
+            if (responseData.includes("❌")) throw new Error(responseData);
+            // Should not happen with new JSON backend, but handle legacy:
+            console.warn("Received string response, anticipated JSON.");
         }
+
+        showResult(responseData);
+        showStatus('Transkribering klar!');
 
     } catch (error) {
         console.error('Transcription error:', error);

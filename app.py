@@ -5,41 +5,130 @@ import imageio_ffmpeg
 # Add ffmpeg to path
 os.environ["PATH"] += os.pathsep + os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe())
 
-# import torch
-# from transformers import pipeline
+import torch
+from transformers import pipeline
+from pyannote.audio import Pipeline
+import numpy as np
 
 # check system endpoint
 # ...
 
-# Initialize model (lazy loading or global loading)
-# For Spaces, global loading at startup is usually better to avoid delay on first request
-# But requires more startup time.
-# print("Loading model...", flush=True)
-# MODEL_NAME = "KBLab/kb-whisper-large"
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-# pipe = pipeline("automatic-speech-recognition", model=MODEL_NAME, device=device)
-# print(f"Model loaded on {device}", flush=True)
+# Initialize Whisper model
+print("Loading Whisper model...", flush=True)
+MODEL_NAME = "KBLab/kb-whisper-small"
+# Force CPU for stability on free tier
+device = "cpu" 
+pipe = pipeline("automatic-speech-recognition", model=MODEL_NAME, device=device)
+print(f"Whisper loaded on {device}", flush=True)
+
+# Initialize Diarization Pipeline
+print("Loading Diarization pipeline...", flush=True)
+auth_token = os.environ.get("HF_TOKEN")
+try:
+    diarization_pipe = Pipeline.from_pretrained(
+        "pyannote/speaker-diarization-3.1",
+        use_auth_token=auth_token
+    )
+    if diarization_pipe:
+        # Move to device (CPU)
+        diarization_pipe.to(torch.device(device))
+        print("Diarization loaded successfully.", flush=True)
+    else:
+        print("Diarization likely failed to load (None returned). Check HF_TOKEN capabilities.", flush=True)
+except Exception as e:
+    print(f"Failed to load Diarization: {e}. Check if you accepted terms for 'pyannote/speaker-diarization-3.1' on HF.", flush=True)
+    diarization_pipe = None
+
+def format_time(seconds):
+    mins = int(seconds // 60)
+    secs = int(seconds % 60)
+    return f"{mins:02d}:{secs:02d}"
+
+def merge_transcription(whisper_chunks, diarization):
+    # Merge Whisper chunks with Diarization speakers
+    segments = []
+    unique_speakers = set()
+    
+    # Iterate over whisper chunks
+    for chunk in whisper_chunks:
+        text = chunk.get("text", "").strip()
+        start = chunk.get("timestamp", [0, 0])[0]
+        end = chunk.get("timestamp", [0, 0])[1]
+        
+        if end is None: end = start + 2.0 # Fallback
+        
+        # Find dominant speaker in this timeframe
+        speaking_durations = {}
+        
+        # If diarization failed or is None, skip overlap check
+        if diarization:
+            for turn, _, speaker in diarization.itertracks(yield_label=True):
+                # Check overlap
+                seg_start = turn.start
+                seg_end = turn.end
+                
+                overlap_start = max(start, seg_start)
+                overlap_end = min(end, seg_end)
+                
+                if overlap_end > overlap_start:
+                    dur = overlap_end - overlap_start
+                    speaking_durations[speaker] = speaking_durations.get(speaker, 0) + dur
+        
+        # Find max
+        if speaking_durations:
+            best_speaker = max(speaking_durations, key=speaking_durations.get)
+        else:
+            best_speaker = "Unknown"
+        
+        unique_speakers.add(best_speaker)
+        segments.append({
+            "start": start,
+            "end": end,
+            "speaker": best_speaker,
+            "text": text,
+            "formatted_time": format_time(start)
+        })
+    
+    return {
+        "segments": segments,
+        "unique_speakers": sorted(list(unique_speakers))
+    }
 
 def transcribe_audio(audio_file):
     """
-    Transcribe audio using local KBLab Whisper model
+    Transcribe audio using local KBLab Whisper model + Pyannote Diarization
+    Returns JSON object for frontend processing.
     """
     if audio_file is None:
-        return "❌ Vänligen ladda upp en ljudfil först."
+        return {"error": "Ingen fil uppladdad"}
     
-    # try:
-    #     # Pipeline handles file reading and preprocessing
-    #     # Enable chunking for long audio files (>30s)
-    #     result = pipe(audio_file, chunk_length_s=30, return_timestamps=True)
+    try:
+        # 1. Transcribe (Whisper)
+        print(f"Starting Whisper transcription for {audio_file}...", flush=True)
+        whisper_result = pipe(audio_file, chunk_length_s=30, return_timestamps=True)
+        text_raw = whisper_result.get("text", "")
+        chunks = whisper_result.get("chunks", [])
         
-    #     if "text" in result:
-    #         return f"✅ Transkribering:\n\n{result['text']}"
-    #     else:
-    #         return f"⚠️ Oväntat svar: {result}"
+        if not text_raw:
+             return {"error": "Ingen text kunde identifieras"}
+
+        # 2. Diarize (Pyannote)
+        diarization = None
+        if diarization_pipe:
+            print("Starting Speaker Diarization...", flush=True)
+            try:
+                diarization = diarization_pipe(audio_file)
+            except Exception as e_dia:
+                print(f"Diarization failed: {e_dia}", flush=True)
+                # Continue without diarization
+        
+        # 3. Merge & Return JSON
+        result_json = merge_transcription(chunks, diarization)
+        return result_json
             
-    # except Exception as e:
-    #     return f"❌ Ett fel uppstod: {str(e)}"
-    return "✅ Backend is working (Mock Response)"
+    except Exception as e:
+        print(f"Error: {e}", flush=True)
+        return {"error": str(e)}
 
 # Custom CSS with Apple Siri gradient and glassmorphism
 custom_css = """
@@ -177,10 +266,9 @@ with gr.Blocks(title="Svensk Transkribering", theme=gr.themes.Soft(), css=custom
             transcribe_btn = gr.Button("🚀 Transkribera", variant="primary", size="lg")
         
         with gr.Column():
-            output_text = gr.Textbox(
-                label="📝 Resultat",
-                lines=15,
-                placeholder="Transkriberingen visas här..."
+            # Changed to JSON output for frontend compatibility
+            output_json = gr.JSON(
+                label="📝 Resultat Data"
             )
     
     gr.Markdown(
@@ -197,7 +285,7 @@ with gr.Blocks(title="Svensk Transkribering", theme=gr.themes.Soft(), css=custom
     transcribe_btn.click(
         fn=transcribe_audio,
         inputs=[audio_input],
-        outputs=output_text,
+        outputs=output_json,
         api_name="/transcribe_v2"
     )
 
