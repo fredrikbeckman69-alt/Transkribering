@@ -8,7 +8,6 @@ const selectedFileMsg = document.getElementById('selected-file-msg');
 const fileMsg = document.getElementById('file-msg');
 const transcribeBtn = document.getElementById('transcribe-btn');
 const outputContainer = document.getElementById('output-container');
-const transcriptionText = document.getElementById('transcription-text');
 const statusMsg = document.getElementById('status-msg');
 
 let currentFile = null;
@@ -82,8 +81,11 @@ function updateFileUI(filename) {
     transcribeBtn.disabled = false;
 }
 
+let transcriptData = null; // Global storage for JSON data
+
 // Helper: Format speakers into dynamic HTML blocks
 function renderTranscript() {
+    const transcriptionBox = document.getElementById('transcript-container');
     transcriptionBox.innerHTML = '';
 
     transcriptData.segments.forEach((seg, index) => {
@@ -115,6 +117,7 @@ function renderTranscript() {
 
         block.appendChild(header);
         block.appendChild(textP);
+        const transcriptionBox = document.getElementById('transcript-container');
         transcriptionBox.appendChild(block);
     });
 }
@@ -228,11 +231,7 @@ function setLoading(isLoading) {
     }
 }
 
-function showResult(text) {
-    transcriptionText.textContent = text;
-    outputContainer.classList.add('visible');
-    outputContainer.scrollIntoView({ behavior: 'smooth' });
-}
+
 
 function showStatus(message, type = 'info') {
     statusMsg.textContent = message;
